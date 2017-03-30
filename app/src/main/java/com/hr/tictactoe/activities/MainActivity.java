@@ -4,14 +4,14 @@ import android.os.Bundle;
 import android.support.v7.widget.AppCompatImageView;
 import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Toast;
+import android.widget.TextView;
 
 import com.hr.tictactoe.R;
+import com.hr.tictactoe.util.TicTacToe;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -42,12 +42,12 @@ public class MainActivity extends BaseActivity {
     Toolbar toolbar;
     @BindView(R.id.player_type)
     SwitchCompat switchCompat;
-
+    @BindView(R.id.game_result)
+    TextView gameResult;
     boolean isTurnX = true;
-
     public static final int SIZE = 3;
     int val[][] = new int[SIZE][SIZE];
-
+    private boolean isGameFinished;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,12 +56,14 @@ public class MainActivity extends BaseActivity {
         ButterKnife.bind(this);
         setSupportActionBar(toolbar);
         setTitle(getString(R.string.app_name));
+        TicTacToe.setBoard(val);
         imageView = new AppCompatImageView[][]{{r1c1, r1c2, r1c3}, {r2c1, r2c2, r2c3}, {r3c1, r3c2, r3c3}};
     }
 
     public void reset() {
-
+        gameResult.setText("");
         isTurnX = true;
+        isGameFinished = false;
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
                 val[i][j] = 0;
@@ -123,7 +125,7 @@ public class MainActivity extends BaseActivity {
                 j = 2;
                 break;
         }
-        if (val[i][j] == 0) {
+        if (val[i][j] == 0 && !isGameFinished) {
             if (isTurnX) {
                 val[i][j] = 1;
             } else {
@@ -132,7 +134,7 @@ public class MainActivity extends BaseActivity {
             isTurnX = !isTurnX;
             renderScreen();
             if (!showGameResult() && switchCompat.isChecked()) {
-                int x[] = evaluatePositionalValues(isTurnX);
+                int x[] = TicTacToe.optimalMove(isTurnX ? 1 : 2);
                 val[x[0]][x[1]] = isTurnX ? 1 : 2;
                 renderScreen();
                 showGameResult();
@@ -144,17 +146,20 @@ public class MainActivity extends BaseActivity {
 
 
     private boolean showGameResult() {
-        switch (evaluateGameState()) {
+        switch (TicTacToe.checkWinner()) {
             case 0:
                 return false;
             case 1:
-                Toast.makeText(this, "X wins !!", Toast.LENGTH_SHORT).show();
+                gameResult.setText("X wins !!");
+                isGameFinished = true;
                 break;
             case 2:
-                Toast.makeText(this, "O wins !!", Toast.LENGTH_SHORT).show();
+                gameResult.setText("O wins !!");
+                isGameFinished = true;
                 break;
             case 3:
-                Toast.makeText(this, "Its a draw !!", Toast.LENGTH_SHORT).show();
+                gameResult.setText("Its a draw !!");
+                isGameFinished = true;
                 break;
 
 
@@ -174,161 +179,4 @@ public class MainActivity extends BaseActivity {
         }
     }
 
-    private int[] evaluatePositionalValues(boolean isTurnX) {
-        int lastMax = Integer.MIN_VALUE;
-        int score[][] = new int[SIZE][SIZE];
-        int x[] = new int[2];
-        String[][] print = new String[SIZE][SIZE];
-        for (int i = 0; i < SIZE; i++) {
-            for (int j = 0; j < SIZE; j++) {
-                if (val[i][j] != 0) {
-                    score[i][j] = -100;
-                    print[i][j] = "-100";
-                } else {
-
-                    score[i][j] = (int) (getHueristicForPosition(i, j, isTurnX) + 2 * getHueristicForPosition(i, j, !isTurnX));
-                    print[i][j] = score[i][j] + "";
-                }
-                if (score[i][j] > lastMax) {
-                    x[0] = i;
-                    x[1] = j;
-                    lastMax = score[i][j];
-                }
-            }
-        }
-
-        printValues(print);
-        return x;
-
-    }
-
-    private void printValues(String[][] print) {
-        for (String[] strings : print) {
-            String s = "";
-            for (String string : strings) {
-                s += string + " | ";
-            }
-            Log.d("Guru", s);
-        }
-        Log.d("Guru", "--------------------------------------------");
-    }
-
-    private int getHueristicForPosition(int i, int j, boolean isTurnX) {
-
-        int rowScore = 0, colScore = 0, diagLeftScore = 0, diagRightScore = 0;
-        int key = isTurnX ? 1 : 2;
-        int oppKey = isTurnX ? 2 : 1;
-        boolean shouldCheckLeftScore = false, shouldCheckRightScore = false;
-        if (i == j) {
-            shouldCheckLeftScore = true;
-        }
-
-        if (SIZE - j - 1 == i) {
-            shouldCheckRightScore = true;
-        }
-        for (int k = 0; k < SIZE; k++) {
-
-            if (val[i][k] == oppKey) {
-                rowScore += -2;
-            } else {
-                rowScore += val[i][k] == key ? 2 : 1;
-            }
-
-            if (val[k][j] == oppKey) {
-                colScore += -2;
-            } else {
-                colScore += val[k][j] == key ? 2 : 1;
-            }
-
-            if (shouldCheckLeftScore) {
-                if (val[k][k] == oppKey) {
-                    diagLeftScore += -2;
-                } else {
-                    diagLeftScore += val[k][k] == key ? 2 : 1;
-                }
-            }
-
-            if (shouldCheckRightScore) {
-                if (val[k][SIZE - 1 - k] == oppKey) {
-                    diagRightScore += -2;
-                } else {
-                    diagRightScore += val[k][SIZE - 1 - k] == key ? 2 : 1;
-                }
-            }
-
-        }
-
-        return rowScore + colScore + (shouldCheckLeftScore ? diagLeftScore : 0) + (shouldCheckRightScore ? diagRightScore : 0);
-    }
-
-
-    // getPossibleOfOppWin() + getPossibilityOfSelfWin()
-
-    // 0 continue
-    // 1 x wins
-    // 2 o wins
-    // 3 draw
-    private int evaluateGameState() {
-        for (int i = 0; i < SIZE; i++) {
-            boolean areSame = true;
-            int prev = val[i][0];
-            if (prev > 0) {
-                for (int j = 1; j < SIZE; j++) {
-                    if (prev != val[i][j]) {
-                        areSame = false;
-                        break;
-                    }
-                }
-                if (areSame) {
-                    return prev;
-                }
-            }
-        }
-        for (int i = 0; i < SIZE; i++) {
-            boolean areSame = true;
-            int prev = val[0][i];
-            if (prev > 0) {
-                for (int j = 1; j < SIZE; j++) {
-                    if (prev != val[j][i]) {
-                        areSame = false;
-                        break;
-                    }
-                }
-                if (areSame) {
-                    return prev;
-                }
-            }
-        }
-        boolean areSameDiagonalLeft = true;
-        boolean areSameDiagonalRight = true;
-        int prevLeft = val[0][0];
-        int prevRight = val[0][SIZE - 1];
-        for (int i = 0; i < SIZE; i++) {
-            if (prevLeft == 0 || prevLeft != val[i][i]) {
-                areSameDiagonalLeft = false;
-            }
-            if (prevRight == 0 || prevRight != val[SIZE - 1 - i][i]) {
-                areSameDiagonalRight = false;
-            }
-        }
-
-        if (areSameDiagonalLeft) {
-            return prevLeft;
-        }
-
-        if (areSameDiagonalRight) {
-            return prevRight;
-        }
-
-        for (int i = 0; i < SIZE; i++) {
-            for (int j = 0; j < SIZE; j++) {
-                if (val[i][j] == 0) {
-                    return 0;
-                }
-            }
-        }
-
-
-        return 3;
-    }
 }

@@ -1,0 +1,4 @@
+<resources>
+<dimen name="text_huge">39.2sp</dimen>
+<dimen name="margin_normal">20.0dp</dimen>
+</resources>

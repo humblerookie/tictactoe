@@ -63,6 +63,16 @@
         android:gravity="center"
         android:orientation="vertical">
 
+        <TextView
+            android:id="@+id/game_result"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/margin_normal"
+            android:gravity="center"
+            android:textColor="#689F38"
+            android:textSize="@dimen/text_huge"
+            tools:text="X Wins!" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
