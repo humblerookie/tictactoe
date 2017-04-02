@@ -35,10 +35,19 @@ public class TicTacToe {
         return score == 1 ? 10 - depth : (score == 2 ? -10 + depth : 0);
     }
 
+    /**
+     * This function calculates possibility of victory at a given board state
+     * This is calculated by evaluating rows and olcums and two diagonals for
+     * a situation where there are two spots occupied by the player and the
+     * third spot empty.
+     */
     private static int calculatePossibilityScore(int board[][]) {
         int boost = 0;
+        // X And O Row/Column Diagonal counts
         int xrd = 0, ord = 0, xcd = 0, ocd = 0;
+
         for (int i = 0, k = 2; i < 3; i++, k--) {
+            // Column/Row Counts
             int xc = 0, xr = 0;
             int oc = 0, or = 0;
             for (int j = 0; j < 3; j++) {
@@ -70,6 +79,7 @@ public class TicTacToe {
             boost += or == 2 && xr == 0 ? -1 : (xr == 2 && or == 0 ? 1 : 0);
 
         }
+        // Diagonal elements
         boost += ord == 2 && xrd == 0 ? -1 : (xrd == 2 && ord == 0 ? 1 : 0);
         boost += ocd == 2 && xcd == 0 ? -1 : (xcd == 2 && ocd == 0 ? 1 : 0);
 
@@ -157,12 +167,12 @@ public class TicTacToe {
             }
         }
         if (moves.size() > 1) {
-            boolean areDifferent = false;
+            boolean haveDifferentPossibilityOfWinning = false;
             int current = possibilityScore.get(0);
             int index = 0, maxScore = current;
             for (int i = 1; i < possibilityScore.size(); i++) {
                 if (current != possibilityScore.get(i)) {
-                    areDifferent = true;
+                    haveDifferentPossibilityOfWinning = true;
 
                 }
 
@@ -172,7 +182,7 @@ public class TicTacToe {
                 }
             }
 
-            if (!areDifferent) {
+            if (!haveDifferentPossibilityOfWinning) {
                 return moves.get(randomGenerator.nextInt(moves.size()));
             } else {
                 return moves.get(index);
