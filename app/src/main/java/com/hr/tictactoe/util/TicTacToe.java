@@ -31,7 +31,49 @@ public class TicTacToe {
                 score = board[1][1];
             }
         }
+
         return score == 1 ? 10 - depth : (score == 2 ? -10 + depth : 0);
+    }
+
+    private static int calculatePossibilityScore(int board[][]) {
+        int boost = 0;
+        int xrd = 0, ord = 0, xcd = 0, ocd = 0;
+        for (int i = 0, k = 2; i < 3; i++, k--) {
+            int xc = 0, xr = 0;
+            int oc = 0, or = 0;
+            for (int j = 0; j < 3; j++) {
+                if (board[i][j] == 1) {
+                    xc++;
+                } else if (board[i][j] == 2) {
+                    oc++;
+                }
+
+                if (board[j][i] == 1) {
+                    xr++;
+                } else if (board[j][i] == 2) {
+                    or++;
+                }
+            }
+            if (board[i][i] == 1) {
+                xrd++;
+            } else if (board[i][i] == 2) {
+                ord++;
+            }
+
+            if (board[i][k] == 1) {
+                xcd++;
+            } else if (board[i][k] == 2) {
+                ocd++;
+            }
+
+            boost += oc == 2 && xc == 0 ? -1 : (xc == 2 && oc == 0 ? 1 : 0);
+            boost += or == 2 && xr == 0 ? -1 : (xr == 2 && or == 0 ? 1 : 0);
+
+        }
+        boost += ord == 2 && xrd == 0 ? -1 : (xrd == 2 && ord == 0 ? 1 : 0);
+        boost += ocd == 2 && xcd == 0 ? -1 : (xcd == 2 && ocd == 0 ? 1 : 0);
+
+        return boost;
     }
 
     private static boolean isAnyPositionEmpty(int board[][]) {
@@ -91,6 +133,7 @@ public class TicTacToe {
     public static int[] optimalMove(int player) {
         int optimalValue = player == 1 ? -Integer.MIN_VALUE : Integer.MAX_VALUE;
         List<int[]> moves = new ArrayList<>();
+        List<Integer> possibilityScore = new ArrayList<>();
         int ret[] = {0, 0};
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board.length; j++) {
@@ -102,16 +145,38 @@ public class TicTacToe {
                         ret[0] = i;
                         ret[1] = j;
                         moves.clear();
+                        possibilityScore.clear();
+                        possibilityScore.add(calculatePossibilityScore(board));
                         moves.add(ret);
                     } else if ((player == 1 && moveVal == optimalValue) || (player == 2 && moveVal == optimalValue)) {
                         moves.add(new int[]{i, j});
+                        possibilityScore.add(calculatePossibilityScore(board));
                     }
                     board[i][j] = 0;
                 }
             }
         }
         if (moves.size() > 1) {
-            return moves.get(randomGenerator.nextInt(moves.size()));
+            boolean areDifferent = false;
+            int current = possibilityScore.get(0);
+            int index = 0, maxScore = current;
+            for (int i = 1; i < possibilityScore.size(); i++) {
+                if (current != possibilityScore.get(i)) {
+                    areDifferent = true;
+
+                }
+
+                if ((player == 1 && possibilityScore.get(i) > maxScore) || (player == 2 && possibilityScore.get(i) < maxScore)) {
+                    maxScore = possibilityScore.get(i);
+                    index = i;
+                }
+            }
+
+            if (!areDifferent) {
+                return moves.get(randomGenerator.nextInt(moves.size()));
+            } else {
+                return moves.get(index);
+            }
         } else {
             return ret;
         }
